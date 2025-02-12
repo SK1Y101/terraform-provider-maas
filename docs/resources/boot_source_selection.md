@@ -3,12 +3,12 @@
 page_title: "maas_boot_source_selection Resource - terraform-provider-maas"
 subcategory: ""
 description: |-
-  Provides a resource to manage the MAAS boot source.
+  Provides a resource to manage a MAAS boot source selection.
 ---
 
 # maas_boot_source_selection (Resource)
 
-Provides a resource to manage the MAAS boot source.
+Provides a resource to manage a MAAS boot source selection.
 
 
 
@@ -17,15 +17,13 @@ Provides a resource to manage the MAAS boot source.
 
 ### Required
 
-- `url` (String) The URL of the boot source.
-
-### Optional
-
-- `keyring_data` (String) The data on the keyring for the boot source.
-- `keyring_filename` (String) The filename on the keyring for the boot source.
+- `os` (String) The Operating system for this resource
+- `release` (String) The specific release of the Operating system for this resource
 
 ### Read-Only
 
-- `created` (String) The creation time of the boot source.
+- `arches` (List of String) The architecture list for this resource
+- `boot_source_id` (String) The BootSource this resource is associated with
 - `id` (String) The ID of this resource.
-- `updated` (String) The time of most recent update of the boot source.
+- `labels` (List of String) The label lists for this resource
+- `subarches` (List of String) The list of subarches for this resource

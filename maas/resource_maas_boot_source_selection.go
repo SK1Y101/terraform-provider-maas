@@ -2,7 +2,10 @@ package maas
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/canonical/gomaasclient/client"
+	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -68,4 +71,40 @@ func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	return nil
+}
+
+func fetchDefaultBootSourceSelection(client *client.Client) (*entity.BootSourceSelection, error) {
+	// Fetch the default commissioning details
+	var default_os string
+
+	default_os_bytes, err := client.MAASServer.Get("default_osystem")
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(default_os_bytes, &default_os)
+	if err != nil {
+		return nil, err
+	}
+
+	var default_release string
+
+	default_release_bytes, err := client.MAASServer.Get("default_distro_Series")
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(default_release_bytes, &default_release)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only then fetch the default bootsource that refers to them
+
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return nil, err
+	}
+
+	return getBootSourceSelection(client, bootsource.ID, default_os, default_release)
 }

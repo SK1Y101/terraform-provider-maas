@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
 	os := "ubuntu"
-	release := "noble"
+	release := "jammy"
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "arches"),
