@@ -9,14 +9,12 @@ import (
 )
 
 func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
-
-	boot_source_id := "1"
 	os := "ubuntu"
 	release := "noble"
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "arches"),
-		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "boot_source_id", boot_source_id),
+		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "boot_source_id"),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "labels"),
 		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "os", os),
 		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "release", release),
@@ -29,20 +27,23 @@ func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
 		ErrorCheck: func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceMaasBootSourceSelection(boot_source_id, os, release),
+				Config: testAccDataSourceMaasBootSourceSelection(os, release),
 				Check:  resource.ComposeTestCheckFunc(checks...),
 			},
 		},
 	})
 }
 
-func testAccDataSourceMaasBootSourceSelection(boot_source_id string, os string, release string) string {
+func testAccDataSourceMaasBootSourceSelection(os string, release string) string {
 	return fmt.Sprintf(`
+data "maas_boot_source" "test" {
+	url = "http://images.maas.io/ephemeral-v3/stable/"
+}
 data "maas_boot_source_selection" "test" {
-	boot_source_id = "%v"
-	
+	boot_source_id = maas_boot_source.test.id
+
 	os      = "%s"
 	release = "%s"
 }
-`, boot_source_id, os, release)
+`, os, release)
 }

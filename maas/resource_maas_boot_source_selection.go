@@ -2,18 +2,15 @@ package maas
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/canonical/gomaasclient/client"
-	"github.com/canonical/gomaasclient/entity"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceMaasBootSourceSelection() *schema.Resource {
+func resourceMAASBootSourceSelection() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMaasBootSourceSelectionRead,
-		Description: "Provides a resource to fetch a MAAS boot source selection.",
+		Description: "Provides a resource to manage a MAAS boot source selection.",
+		ReadContext: resourceBootSourceSelectionRead,
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
@@ -50,14 +47,13 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 	}
 }
 
-func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
 	bootsourceselection, err := getBootSourceSelection(client, d.Get("boot_source_id").(int), d.Get("os").(string), d.Get("release").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId((fmt.Sprintf("%v", bootsourceselection.ID)))
 
 	tfState := map[string]interface{}{
 		"arches":         bootsourceselection.Arches,
@@ -72,28 +68,4 @@ func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.Resour
 	}
 
 	return nil
-}
-
-func getBootSourceSelection(client *client.Client, boot_source_id int, os string, release string) (*entity.BootSourceSelection, error) {
-	bootsourceselection, err := findBootSourceSelection(client, boot_source_id, os, release)
-	if err != nil {
-		return nil, err
-	}
-	if bootsourceselection == nil {
-		return nil, fmt.Errorf("boot source selection (%s %s) was not found", os, release)
-	}
-	return bootsourceselection, nil
-}
-
-func findBootSourceSelection(client *client.Client, boot_source_id int, os string, release string) (*entity.BootSourceSelection, error) {
-	bootsourceselections, err := client.BootSourceSelections.Get(boot_source_id)
-	if err != nil {
-		return nil, err
-	}
-	for _, d := range bootsourceselections {
-		if d.OS == os || d.Release == release {
-			return &d, nil
-		}
-	}
-	return nil, nil
 }
