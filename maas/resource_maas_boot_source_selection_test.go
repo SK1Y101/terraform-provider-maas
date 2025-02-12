@@ -16,12 +16,13 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 
 	var bootsourceselection entity.BootSourceSelection
 	os := "ubuntu"
-	release := "jammy"
+	release := "focal"
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.test", &bootsourceselection),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "os", os),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "release", release),
+		resource.TestCheckResourceAttrSet("maas_boot_source_selection.test", "arches"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{

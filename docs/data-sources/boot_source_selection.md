@@ -18,12 +18,15 @@ Provides a resource to fetch a MAAS boot source selection.
 ### Required
 
 - `os` (String) The Operating system for this resource
+
+### Optional
+
+- `arches` (List of String) The architecture list for this resource
+- `labels` (List of String) The label lists for this resource
 - `release` (String) The specific release of the Operating system for this resource
+- `subarches` (List of String) The list of subarches for this resource
 
 ### Read-Only
 
-- `arches` (List of String) The architecture list for this resource
 - `boot_source_id` (String) The BootSource this resource is associated with
 - `id` (String) The ID of this resource.
-- `labels` (List of String) The label lists for this resource
-- `subarches` (List of String) The list of subarches for this resource

@@ -22,7 +22,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"arches": {
 				Type:        schema.TypeList,
-				Computed:    true,
+				Optional:    true,
 				Description: "The architecture list for this resource",
 			},
 			"boot_source_id": {
@@ -32,7 +32,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 			},
 			"labels": {
 				Type:        schema.TypeList,
-				Computed:    true,
+				Optional:    true,
 				Description: "The label lists for this resource",
 			},
 			"os": {
@@ -47,7 +47,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 			},
 			"subarches": {
 				Type:        schema.TypeList,
-				Computed:    true,
+				Optional:    true,
 				Description: "The list of subarches for this resource",
 			},
 		},
