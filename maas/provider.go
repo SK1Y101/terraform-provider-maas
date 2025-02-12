@@ -77,6 +77,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"maas_boot_source":                dataSourceMaasBootSource(),
+			"maas_boot_source_selection":      dataSourceMaasBootSourceSelection(),
 			"maas_fabric":                     dataSourceMaasFabric(),
 			"maas_vlan":                       dataSourceMaasVlan(),
 			"maas_subnet":                     dataSourceMaasSubnet(),
