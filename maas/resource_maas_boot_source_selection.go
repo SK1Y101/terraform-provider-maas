@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	"github.com/canonical/gomaasclient/client"
 	"github.com/canonical/gomaasclient/entity"
@@ -12,8 +13,11 @@ import (
 
 func resourceMAASBootSourceSelection() *schema.Resource {
 	return &schema.Resource{
-		Description: "Provides a resource to manage a MAAS boot source selection.",
-		ReadContext: resourceBootSourceSelectionRead,
+		Description:   "Provides a resource to manage a MAAS boot source selection.",
+		CreateContext: resourceBootSourceSelectionCreate,
+		ReadContext:   resourceBootSourceSelectionRead,
+		UpdateContext: resourceBootSourceSelectionUpdate,
+		DeleteContext: resourceBootSourceSelectionDelete,
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
@@ -50,17 +54,60 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 	}
 }
 
+func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselection, err := getBootSourceSelection(client, bootsource.ID, id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselectionParams := entity.BootSourceSelectionParams{
+		OS:        d.Get("os").(string),
+		Release:   d.Get("release").(string),
+		Arches:    d.Get("arches").([]string),
+		Subarches: d.Get("subarches").([]string),
+		Labels:    d.Get("labels").([]string),
+	}
+
+	if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceBootSourceSelectionRead(ctx, d, meta)
+}
+
 func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	bootsourceselection, err := getBootSourceSelection(client, d.Get("boot_source_id").(int), d.Get("os").(string), d.Get("release").(string))
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselection, err := getBootSourceSelection(client, bootsource.ID, id)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	tfState := map[string]interface{}{
 		"arches":         bootsourceselection.Arches,
-		"boot_source_id": bootsourceselection.BootSourceID,
+		"boot_source_id": bootsource.ID,
 		"labels":         bootsourceselection.Labels,
 		"os":             bootsourceselection.OS,
 		"release":        bootsourceselection.Release,
@@ -68,6 +115,80 @@ func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
+	}
+
+	return nil
+}
+func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselection, err := getBootSourceSelection(client, bootsource.ID, id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselectionParams := entity.BootSourceSelectionParams{
+		OS:        d.Get("os").(string),
+		Release:   d.Get("release").(string),
+		Arches:    d.Get("arches").([]string),
+		Subarches: d.Get("subarches").([]string),
+		Labels:    d.Get("labels").([]string),
+	}
+
+	if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceBootSourceSelectionRead(ctx, d, meta)
+}
+
+func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*ClientConfig).Client
+
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselection, err := getBootSourceSelection(client, bootsource.ID, id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// if the boot source selection is the default, we need to treat it differently
+	defaultbootsourceselection, err := fetchDefaultBootSourceSelection(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if defaultbootsourceselection.BootSourceID == bootsourceselection.BootSourceID && defaultbootsourceselection.ID == bootsourceselection.ID {
+		bootsourceselectionParams := entity.BootSourceSelectionParams{
+			OS:        defaultbootsourceselection.OS,
+			Release:   defaultbootsourceselection.Release,
+			Arches:    []string{"amd64"},
+			Subarches: []string{"*"},
+			Labels:    []string{},
+		}
+		if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
+			return diag.FromErr(err)
+		}
+	} else {
+		return diag.FromErr(client.BootSourceSelection.Delete(bootsource.ID, bootsourceselection.ID))
 	}
 
 	return nil
@@ -106,5 +227,5 @@ func fetchDefaultBootSourceSelection(client *client.Client) (*entity.BootSourceS
 		return nil, err
 	}
 
-	return getBootSourceSelection(client, bootsource.ID, default_os, default_release)
+	return getBootSourceSelectionByRelease(client, bootsource.ID, default_os, default_release)
 }

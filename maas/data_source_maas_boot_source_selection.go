@@ -53,7 +53,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	bootsourceselection, err := getBootSourceSelection(client, d.Get("boot_source_id").(int), d.Get("os").(string), d.Get("release").(string))
+	bootsourceselection, err := getBootSourceSelectionByRelease(client, d.Get("boot_source_id").(int), d.Get("os").(string), d.Get("release").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -74,7 +74,18 @@ func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func getBootSourceSelection(client *client.Client, boot_source_id int, os string, release string) (*entity.BootSourceSelection, error) {
+func getBootSourceSelection(client *client.Client, boot_source_id int, id int) (*entity.BootSourceSelection, error) {
+	bootsourceselection, err := client.BootSourceSelection.Get(boot_source_id, id)
+	if err != nil {
+		return nil, err
+	}
+	if bootsourceselection == nil {
+		return nil, fmt.Errorf("boot source selection (%v %v) was not found", boot_source_id, id)
+	}
+	return bootsourceselection, nil
+}
+
+func getBootSourceSelectionByRelease(client *client.Client, boot_source_id int, os string, release string) (*entity.BootSourceSelection, error) {
 	bootsourceselection, err := findBootSourceSelection(client, boot_source_id, os, release)
 	if err != nil {
 		return nil, err
