@@ -178,7 +178,7 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 			Release:   defaultbootsourceselection.Release,
 			Arches:    []string{"amd64"},
 			Subarches: []string{"*"},
-			Labels:    []string{},
+			Labels:    []string{"*"},
 		}
 		if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
 			return diag.FromErr(err)

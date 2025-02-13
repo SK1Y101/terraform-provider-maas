@@ -112,6 +112,18 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 		return err
 	}
 
+	// fetch the singular boot source
+	bootsources, err := conn.BootSources.Get()
+	if err != nil {
+		return err
+	}
+	if len(bootsources) == 0 {
+		return fmt.Errorf("boot source was not found")
+	}
+	if len(bootsources) > 1 {
+		return fmt.Errorf("expected a single boot source")
+	}
+
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "maas_boot_source" {
@@ -120,25 +132,21 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
-			return err
-		}
-		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source_id"])
-		if err != nil {
-			return err
+			return fmt.Errorf("Can't id: %s", err)
 		}
 
-		response, err := conn.BootSourceSelection.Get(boot_source_id, id)
+		response, err := conn.BootSourceSelection.Get(bootsources[0].ID, id)
 		if err == nil {
 			// default boot source selection
 			if response.OS == default_os && response.Release == default_release {
 				if len(response.Arches) != 1 || response.Arches[0] != "amd64" {
-					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Arches)
+					return fmt.Errorf("MAAS Boot Source Selection (%s) Arches not reset to default. Returned value: %s", rs.Primary.ID, response.Arches)
 				}
-				if len(response.Subarches) != 1 || response.Arches[0] != "*" {
-					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Subarches)
+				if len(response.Subarches) != 1 || response.Subarches[0] != "*" {
+					return fmt.Errorf("MAAS Boot Source Selection (%s) Subarches not reset to default. Returned value: %s", rs.Primary.ID, response.Subarches)
 				}
-				if len(response.Labels) != 0 {
-					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Labels)
+				if len(response.Labels) != 1 || response.Labels[0] != "*" {
+					return fmt.Errorf("MAAS Boot Source Selection (%s) Labels not reset to default. Returned value: %s", rs.Primary.ID, response.Labels)
 				}
 			} else if response != nil && response.ID == id {
 				return fmt.Errorf("MAAS Boot Source Selection (%s) still exists.", rs.Primary.ID)
