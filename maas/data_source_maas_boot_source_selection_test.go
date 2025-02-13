@@ -10,15 +10,16 @@ import (
 
 func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
 	os := "ubuntu"
-	release := "jammy"
+	release := "noble"
 
 	checks := []resource.TestCheckFunc{
-		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "arches"),
+		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "arches.#"),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "boot_source_id"),
-		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "labels"),
+		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "labels.#"),
 		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "os", os),
-		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "release", release),
-		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "subarches"),
+		// the returned release depends on tested MAAS version
+		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "release"),
+		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "subarches.#"),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -37,11 +38,9 @@ func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
 func testAccDataSourceMaasBootSourceSelection(os string, release string) string {
 	return fmt.Sprintf(`
 data "maas_boot_source" "test" {
-	url = "http://images.maas.io/ephemeral-v3/stable/"
 }
-data "maas_boot_source_selection" "test" {
-	boot_source_id = maas_boot_source.test.id
 
+data "maas_boot_source_selection" "test" {
 	os      = "%s"
 	release = "%s"
 }

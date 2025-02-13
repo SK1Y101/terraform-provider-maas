@@ -28,6 +28,7 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:   func() { testutils.PreCheck(t, nil) },
 		Providers:  testutils.TestAccProviders,
+		// CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,
 		ErrorCheck: func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
@@ -71,14 +72,50 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 
 func testAccMAASBootSourceSelection(os string, release string) string {
 	return fmt.Sprintf(`
-data "maas_boot_source" "test" {
-	url = "http://images.maas.io/ephemeral-v3/stable/"
+resource "maas_boot_source" "test" {
+	url 			 = "http://images.maas.io/ephemeral-v3/stable/"
+	keyring_filename = "/snap/maas/current/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 }
-data "maas_boot_source_selection" "test" {
-	boot_source_id = maas_boot_source.test.id
 
+resource "maas_boot_source_selection" "test" {
 	os      = "%s"
 	release = "%s"
 }
 `, os, release)
 }
+
+
+// func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
+// 	// retrieve the connection established in Provider configuration
+// 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+
+// 	// loop through the resources in state
+// 	for _, rs := range s.RootModule().Resources {
+// 		if rs.Type != "maas_boot_source" {
+// 			continue
+// 		}
+
+// 		id, err := strconv.Atoi(rs.Primary.ID)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		response, err := conn.BootSource.Get(id)
+// 		if err == nil {
+// 			if response.URL != defaultURL {
+// 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.URL)
+// 			}
+// 			if response.KeyringFilename != snapKeyring {
+// 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringFilename)
+// 			}
+// 			if response.KeyringData != "" {
+// 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringData)
+// 			}
+
+// 			return nil
+// 		}
+
+// 		return err
+// 	}
+
+// 	return nil
+// }

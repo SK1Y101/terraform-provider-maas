@@ -17,7 +17,7 @@ const debKeyring = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 func resourceMAASBootSource() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Provides a resource to manage the MAAS boot source.",
-		CreateContext: resourceBootSourceCreate,
+		CreateContext: resourceBootSourceUpdate,
 		ReadContext:   resourceBootSourceRead,
 		UpdateContext: resourceBootSourceUpdate,
 		DeleteContext: resourceBootSourceDelete,
@@ -54,29 +54,6 @@ func resourceMAASBootSource() *schema.Resource {
 	}
 }
 
-func resourceBootSourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ClientConfig).Client
-
-	bootsource, err := getBootSource(client)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	d.SetId(fmt.Sprintf("%v", bootsource.ID))
-
-	// We create by transmuting the single boot source
-	bootsourceParams := entity.BootSourceParams{
-		KeyringData:     d.Get("keyring_data").(string),
-		KeyringFilename: d.Get("keyring_filename").(string),
-		URL:             d.Get("url").(string),
-	}
-
-	if _, err := client.BootSource.Update(bootsource.ID, &bootsourceParams); err != nil {
-		return diag.FromErr(err)
-	}
-
-	return resourceBootSourceRead(ctx, d, meta)
-}
-
 func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
@@ -84,6 +61,7 @@ func resourceBootSourceRead(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	tfState := map[string]interface{}{
 		"created":          bootsource.Created,
@@ -106,6 +84,7 @@ func resourceBootSourceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsource.ID))
 
 	bootsourceParams := entity.BootSourceParams{
 		KeyringData:     d.Get("keyring_data").(string),

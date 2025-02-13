@@ -3,6 +3,7 @@ package maas
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/canonical/gomaasclient/client"
@@ -22,16 +23,18 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"arches": {
 				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The architecture list for this resource",
 			},
 			"boot_source_id": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Computed:    true,
 				Description: "The BootSource this resource is associated with",
 			},
 			"labels": {
 				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The label lists for this resource",
 			},
@@ -47,6 +50,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 			},
 			"subarches": {
 				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The list of subarches for this resource",
 			},
@@ -62,27 +66,19 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	bootsourceselection, err := getBootSourceSelection(client, bootsource.ID, id)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	bootsourceselectionParams := entity.BootSourceSelectionParams{
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
-		Arches:    d.Get("arches").([]string),
-		Subarches: d.Get("subarches").([]string),
-		Labels:    d.Get("labels").([]string),
+		Arches:    sliceToString(d.Get("arches")),
+		Subarches: sliceToString(d.Get("subarches")),
+		Labels:    sliceToString(d.Get("labels")),
 	}
 
-	if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
+	bootsourceselection, err := client.BootSourceSelections.Create(bootsource.ID, &bootsourceselectionParams)
+	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId((fmt.Sprintf("%v", bootsourceselection.ID)))
 
 	return resourceBootSourceSelectionRead(ctx, d, meta)
 }
@@ -140,9 +136,9 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 	bootsourceselectionParams := entity.BootSourceSelectionParams{
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
-		Arches:    d.Get("arches").([]string),
-		Subarches: d.Get("subarches").([]string),
-		Labels:    d.Get("labels").([]string),
+		Arches:    sliceToString(d.Get("arches")),
+		Subarches: sliceToString(d.Get("subarches")),
+		Labels:    sliceToString(d.Get("labels")),
 	}
 
 	if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
@@ -194,6 +190,21 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
+func sliceToString(v interface{}) []string {
+	if v == nil {
+		return nil
+	}
+	list, ok := v.([]interface{})
+	if !ok {
+		return nil
+	}
+	output_list := make([]string, len(list))
+	for i, item := range list {
+		output_list[i], _ = item.(string)
+	}
+	return output_list
+}
+
 func fetchDefaultBootSourceSelection(client *client.Client) (*entity.BootSourceSelection, error) {
 	// Fetch the default commissioning details
 	var default_os string
@@ -210,7 +221,7 @@ func fetchDefaultBootSourceSelection(client *client.Client) (*entity.BootSourceS
 
 	var default_release string
 
-	default_release_bytes, err := client.MAASServer.Get("default_distro_Series")
+	default_release_bytes, err := client.MAASServer.Get("default_distro_series")
 	if err != nil {
 		return nil, err
 	}

@@ -18,16 +18,18 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"arches": {
 				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The architecture list for this resource",
 			},
 			"boot_source_id": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Computed:    true,
 				Description: "The BootSource this resource is associated with",
 			},
 			"labels": {
 				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The label lists for this resource",
 			},
@@ -43,6 +45,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 			},
 			"subarches": {
 				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The list of subarches for this resource",
 			},
@@ -53,7 +56,12 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	bootsourceselection, err := getBootSourceSelectionByRelease(client, d.Get("boot_source_id").(int), d.Get("os").(string), d.Get("release").(string))
+	bootsource, err := getBootSource(client)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	bootsourceselection, err := getBootSourceSelectionByRelease(client, bootsource.ID, d.Get("os").(string), d.Get("release").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
