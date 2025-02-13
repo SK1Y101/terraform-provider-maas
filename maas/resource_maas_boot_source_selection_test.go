@@ -134,6 +134,12 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 				if len(response.Arches) != 1 || response.Arches[0] != "amd64" {
 					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Arches)
 				}
+				if len(response.Subarches) != 1 || response.Arches[0] != "*" {
+					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Subarches)
+				}
+				if len(response.Labels) != 0 {
+					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Labels)
+				}
 			} else if response != nil && response.ID == id {
 				return fmt.Errorf("MAAS Boot Source Selection (%s) still exists.", rs.Primary.ID)
 			}
