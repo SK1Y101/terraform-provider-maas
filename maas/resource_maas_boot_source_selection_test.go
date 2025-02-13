@@ -1,6 +1,7 @@
 package maas_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"terraform-provider-maas/maas"
@@ -87,37 +88,61 @@ resource "maas_boot_source_selection" "test" {
 `, os, release, arches[0])
 }
 
-// func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
-// 	// retrieve the connection established in Provider configuration
-// 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
+func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
+	// retrieve the connection established in Provider configuration
+	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
-// 	// loop through the resources in state
-// 	for _, rs := range s.RootModule().Resources {
-// 		if rs.Type != "maas_boot_source" {
-// 			continue
-// 		}
+	// Fetch the default commissioning details
+	var default_os string
+	default_os_bytes, err := conn.MAASServer.Get("default_osystem")
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(default_os_bytes, &default_os)
+	if err != nil {
+		return err
+	}
+	var default_release string
+	default_release_bytes, err := conn.MAASServer.Get("default_distro_series")
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(default_release_bytes, &default_release)
+	if err != nil {
+		return err
+	}
 
-// 		id, err := strconv.Atoi(rs.Primary.ID)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		response, err := conn.BootSource.Get(id)
-// 		if err == nil {
-// 			if response.URL != defaultURL {
-// 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.URL)
-// 			}
-// 			if response.KeyringFilename != snapKeyring {
-// 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringFilename)
-// 			}
-// 			if response.KeyringData != "" {
-// 				return fmt.Errorf("MAAS Boot Source (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.KeyringData)
-// 			}
+	// loop through the resources in state
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "maas_boot_source" {
+			continue
+		}
 
-// 			return nil
-// 		}
+		id, err := strconv.Atoi(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source_id"])
+		if err != nil {
+			return err
+		}
 
-// 		return err
-// 	}
+		response, err := conn.BootSourceSelection.Get(boot_source_id, id)
+		if err == nil {
+			// default boot source selection
+			if response.OS == default_os && response.Release == default_release {
+				if len(response.Arches) != 1 || response.Arches[0] != "amd64" {
+					return fmt.Errorf("MAAS Boot Source Selection (%s) not reset to default. Returned value: %s", rs.Primary.ID, response.Arches)
+				}
+			} else if response != nil && response.ID == id {
+				return fmt.Errorf("MAAS Boot Source Selection (%s) still exists.", rs.Primary.ID)
+			}
 
-// 	return nil
-// }
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
+}

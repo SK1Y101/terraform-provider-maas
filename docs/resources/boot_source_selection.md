@@ -29,11 +29,11 @@ resource "maas_boot_source_selection" "test" {
 
 ### Optional
 
-- `arches` (List of String) The architecture list for this resource
-- `labels` (List of String) The label lists for this resource
-- `subarches` (List of String) The list of subarches for this resource
+- `arches` (Set of String) The architecture list for this resource
+- `labels` (Set of String) The label lists for this resource
+- `subarches` (Set of String) The list of subarches for this resource
 
 ### Read-Only
 
-- `boot_source_id` (String) The BootSource this resource is associated with
+- `boot_source_id` (Number) The BootSource this resource is associated with
 - `id` (String) The ID of this resource.
