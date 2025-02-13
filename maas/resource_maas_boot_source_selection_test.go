@@ -16,23 +16,25 @@ func TestAccResourceMAASBootSourceSelection_basic(t *testing.T) {
 
 	var bootsourceselection entity.BootSourceSelection
 	os := "ubuntu"
-	release := "focal"
+	release := "oracular"
+	arches := []string{"amd64"}
 
 	checks := []resource.TestCheckFunc{
 		testAccMAASBootSourceSelectionCheckExists("maas_boot_source_selection.test", &bootsourceselection),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "os", os),
 		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "release", release),
-		resource.TestCheckResourceAttrSet("maas_boot_source_selection.test", "arches"),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.#", "1"),
+		resource.TestCheckResourceAttr("maas_boot_source_selection.test", "arches.0", arches[0]),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:   func() { testutils.PreCheck(t, nil) },
-		Providers:  testutils.TestAccProviders,
+		PreCheck:  func() { testutils.PreCheck(t, nil) },
+		Providers: testutils.TestAccProviders,
 		// CheckDestroy: testAccCheckMAASBootSourceSelectionDestroy,
 		ErrorCheck: func(err error) error { return err },
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMAASBootSourceSelection(os, release),
+				Config: testAccMAASBootSourceSelection(os, release, arches),
 				Check:  resource.ComposeAggregateTestCheckFunc(checks...),
 			},
 		},
@@ -70,7 +72,7 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 	}
 }
 
-func testAccMAASBootSourceSelection(os string, release string) string {
+func testAccMAASBootSourceSelection(os string, release string, arches []string) string {
 	return fmt.Sprintf(`
 resource "maas_boot_source" "test" {
 	url 			 = "http://images.maas.io/ephemeral-v3/stable/"
@@ -80,10 +82,10 @@ resource "maas_boot_source" "test" {
 resource "maas_boot_source_selection" "test" {
 	os      = "%s"
 	release = "%s"
+	arches  = ["%s"]
 }
-`, os, release)
+`, os, release, arches[0])
 }
-
 
 // func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 // 	// retrieve the connection established in Provider configuration

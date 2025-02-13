@@ -22,7 +22,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The architecture list for this resource",
@@ -33,7 +33,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The BootSource this resource is associated with",
 			},
 			"labels": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The label lists for this resource",
@@ -49,7 +49,7 @@ func resourceMAASBootSourceSelection() *schema.Resource {
 				Description: "The specific release of the Operating system for this resource",
 			},
 			"subarches": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The list of subarches for this resource",
@@ -69,9 +69,9 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 	bootsourceselectionParams := entity.BootSourceSelectionParams{
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
-		Arches:    sliceToString(d.Get("arches")),
-		Subarches: sliceToString(d.Get("subarches")),
-		Labels:    sliceToString(d.Get("labels")),
+		Arches:    convertToStringSlice(d.Get("arches").(*schema.Set).List()),
+		Subarches: convertToStringSlice(d.Get("subarches").(*schema.Set).List()),
+		Labels:    convertToStringSlice(d.Get("labels").(*schema.Set).List()),
 	}
 
 	bootsourceselection, err := client.BootSourceSelections.Create(bootsource.ID, &bootsourceselectionParams)
@@ -136,9 +136,9 @@ func resourceBootSourceSelectionUpdate(ctx context.Context, d *schema.ResourceDa
 	bootsourceselectionParams := entity.BootSourceSelectionParams{
 		OS:        d.Get("os").(string),
 		Release:   d.Get("release").(string),
-		Arches:    sliceToString(d.Get("arches")),
-		Subarches: sliceToString(d.Get("subarches")),
-		Labels:    sliceToString(d.Get("labels")),
+		Arches:    convertToStringSlice(d.Get("arches").(*schema.Set).List()),
+		Subarches: convertToStringSlice(d.Get("subarches").(*schema.Set).List()),
+		Labels:    convertToStringSlice(d.Get("labels").(*schema.Set).List()),
 	}
 
 	if _, err := client.BootSourceSelection.Update(bootsource.ID, bootsourceselection.ID, &bootsourceselectionParams); err != nil {
@@ -188,21 +188,6 @@ func resourceBootSourceSelectionDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	return nil
-}
-
-func sliceToString(v interface{}) []string {
-	if v == nil {
-		return nil
-	}
-	list, ok := v.([]interface{})
-	if !ok {
-		return nil
-	}
-	output_list := make([]string, len(list))
-	for i, item := range list {
-		output_list[i], _ = item.(string)
-	}
-	return output_list
 }
 
 func fetchDefaultBootSourceSelection(client *client.Client) (*entity.BootSourceSelection, error) {

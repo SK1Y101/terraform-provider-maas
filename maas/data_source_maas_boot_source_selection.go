@@ -17,7 +17,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"arches": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The architecture list for this resource",
@@ -28,7 +28,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 				Description: "The BootSource this resource is associated with",
 			},
 			"labels": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The label lists for this resource",
@@ -44,7 +44,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 				Description: "The specific release of the Operating system for this resource",
 			},
 			"subarches": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
 				Description: "The list of subarches for this resource",
