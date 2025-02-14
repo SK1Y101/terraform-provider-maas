@@ -69,8 +69,6 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 
 		*bootSourceSelection = *gotBootSourceSelection
 
-		return fmt.Errorf("Boot selection created: %v", bootSourceSelection.ID)
-
 		return nil
 	}
 }
