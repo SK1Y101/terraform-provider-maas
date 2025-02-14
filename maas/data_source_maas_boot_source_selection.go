@@ -60,7 +60,7 @@ func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.Resour
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId((fmt.Sprintf("%v", bootsourceselection.ID)))
+	d.SetId(fmt.Sprintf("%v", bootsourceselection.ID))
 
 	tfState := map[string]interface{}{
 		"arches":      bootsourceselection.Arches,

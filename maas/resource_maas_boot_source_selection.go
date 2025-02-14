@@ -89,7 +89,7 @@ func resourceBootSourceSelectionCreate(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId((fmt.Sprintf("%v", bootsourceselection.ID)))
+	d.SetId(fmt.Sprintf("%v", bootsourceselection.ID))
 
 	return resourceBootSourceSelectionRead(ctx, d, meta)
 }
@@ -106,6 +106,7 @@ func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	d.SetId(fmt.Sprintf("%v", bootsourceselection.ID))
 
 	tfState := map[string]interface{}{
 		"arches":      bootsourceselection.Arches,
@@ -115,7 +116,6 @@ func resourceBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData
 		"release":     bootsourceselection.Release,
 		"subarches":   bootsourceselection.Subarches,
 	}
-	d.SetId((fmt.Sprintf("%v", bootsourceselection.ID)))
 
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
