@@ -122,9 +122,6 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 		}
 
 		response, err := conn.BootSourceSelection.Get(boot_source_id, id)
-		if err != nil {
-			return err
-		}
 		if err == nil {
 			// default boot source selection
 			if response.OS == "ubuntu" && response.Release == default_release {
