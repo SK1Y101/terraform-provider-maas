@@ -22,10 +22,10 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 				Optional:    true,
 				Description: "The architecture list for this resource",
 			},
-			"boot_source_id": {
+			"boot_source": {
 				Type:        schema.TypeInt,
-				Computed:    true,
-				Description: "The BootSource this resource is associated with",
+				Required:    true,
+				Description: "The BootSource database ID this resource is associated with",
 			},
 			"labels": {
 				Type:        schema.TypeSet,
@@ -40,7 +40,7 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 			},
 			"release": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "The specific release of the Operating system for this resource",
 			},
 			"subarches": {
@@ -56,24 +56,19 @@ func dataSourceMaasBootSourceSelection() *schema.Resource {
 func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*ClientConfig).Client
 
-	bootsource, err := getBootSource(client)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	bootsourceselection, err := getBootSourceSelectionByRelease(client, bootsource.ID, d.Get("os").(string), d.Get("release").(string))
+	bootsourceselection, err := getBootSourceSelectionByRelease(client, d.Get("boot_source").(int), d.Get("os").(string), d.Get("release").(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	d.SetId((fmt.Sprintf("%v", bootsourceselection.ID)))
 
 	tfState := map[string]interface{}{
-		"arches":         bootsourceselection.Arches,
-		"boot_source_id": bootsourceselection.BootSourceID,
-		"labels":         bootsourceselection.Labels,
-		"os":             bootsourceselection.OS,
-		"release":        bootsourceselection.Release,
-		"subarches":      bootsourceselection.Subarches,
+		"arches":      bootsourceselection.Arches,
+		"boot_source": bootsourceselection.BootSourceID,
+		"labels":      bootsourceselection.Labels,
+		"os":          bootsourceselection.OS,
+		"release":     bootsourceselection.Release,
+		"subarches":   bootsourceselection.Subarches,
 	}
 	if err := setTerraformState(d, tfState); err != nil {
 		return diag.FromErr(err)
@@ -82,19 +77,8 @@ func dataSourceMaasBootSourceSelectionRead(ctx context.Context, d *schema.Resour
 	return nil
 }
 
-func getBootSourceSelection(client *client.Client, boot_source_id int, id int) (*entity.BootSourceSelection, error) {
-	bootsourceselection, err := client.BootSourceSelection.Get(boot_source_id, id)
-	if err != nil {
-		return nil, err
-	}
-	if bootsourceselection == nil {
-		return nil, fmt.Errorf("boot source selection (%v %v) was not found", boot_source_id, id)
-	}
-	return bootsourceselection, nil
-}
-
-func getBootSourceSelectionByRelease(client *client.Client, boot_source_id int, os string, release string) (*entity.BootSourceSelection, error) {
-	bootsourceselection, err := findBootSourceSelection(client, boot_source_id, os, release)
+func getBootSourceSelectionByRelease(client *client.Client, boot_source int, os string, release string) (*entity.BootSourceSelection, error) {
+	bootsourceselection, err := findBootSourceSelection(client, boot_source, os, release)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +88,8 @@ func getBootSourceSelectionByRelease(client *client.Client, boot_source_id int, 
 	return bootsourceselection, nil
 }
 
-func findBootSourceSelection(client *client.Client, boot_source_id int, os string, release string) (*entity.BootSourceSelection, error) {
-	bootsourceselections, err := client.BootSourceSelections.Get(boot_source_id)
+func findBootSourceSelection(client *client.Client, boot_source int, os string, release string) (*entity.BootSourceSelection, error) {
+	bootsourceselections, err := client.BootSourceSelections.Get(boot_source)
 	if err != nil {
 		return nil, err
 	}

@@ -58,7 +58,7 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 		if err != nil {
 			return err
 		}
-		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source_id"])
+		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
 		if err != nil {
 			return err
 		}
@@ -68,6 +68,8 @@ func testAccMAASBootSourceSelectionCheckExists(rn string, bootSourceSelection *e
 		}
 
 		*bootSourceSelection = *gotBootSourceSelection
+
+		return fmt.Errorf("Boot selection created: %v", bootSourceSelection.ID)
 
 		return nil
 	}
@@ -81,6 +83,8 @@ resource "maas_boot_source" "test" {
 }
 
 resource "maas_boot_source_selection" "test" {
+	boot_source = maas_boot_source.test.id
+
 	os      = "%s"
 	release = "%s"
 	arches  = ["%s"]
@@ -93,15 +97,6 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 	conn := testutils.TestAccProvider.Meta().(*maas.ClientConfig).Client
 
 	// Fetch the default commissioning details
-	var default_os string
-	default_os_bytes, err := conn.MAASServer.Get("default_osystem")
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(default_os_bytes, &default_os)
-	if err != nil {
-		return err
-	}
 	var default_release string
 	default_release_bytes, err := conn.MAASServer.Get("default_distro_series")
 	if err != nil {
@@ -112,33 +107,29 @@ func testAccCheckMAASBootSourceSelectionDestroy(s *terraform.State) error {
 		return err
 	}
 
-	// fetch the singular boot source
-	bootsources, err := conn.BootSources.Get()
-	if err != nil {
-		return err
-	}
-	if len(bootsources) == 0 {
-		return fmt.Errorf("boot source was not found")
-	}
-	if len(bootsources) > 1 {
-		return fmt.Errorf("expected a single boot source")
-	}
-
 	// loop through the resources in state
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "maas_boot_source" {
+		if rs.Type != "maas_boot_source_selection" {
 			continue
 		}
 
 		id, err := strconv.Atoi(rs.Primary.ID)
 		if err != nil {
-			return fmt.Errorf("Can't id: %s", err)
+			return err
+
+		}
+		boot_source_id, err := strconv.Atoi(rs.Primary.Attributes["boot_source"])
+		if err != nil {
+			return err
 		}
 
-		response, err := conn.BootSourceSelection.Get(bootsources[0].ID, id)
+		response, err := conn.BootSourceSelection.Get(boot_source_id, id)
+		if err != nil {
+			return err
+		}
 		if err == nil {
 			// default boot source selection
-			if response.OS == default_os && response.Release == default_release {
+			if response.OS == "ubuntu" && response.Release == default_release {
 				if len(response.Arches) != 1 || response.Arches[0] != "amd64" {
 					return fmt.Errorf("MAAS Boot Source Selection (%s) Arches not reset to default. Returned value: %s", rs.Primary.ID, response.Arches)
 				}

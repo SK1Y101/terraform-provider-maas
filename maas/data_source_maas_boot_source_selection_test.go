@@ -14,7 +14,7 @@ func TestAccDataSourceMaasBootSourceSelection_basic(t *testing.T) {
 
 	checks := []resource.TestCheckFunc{
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "arches.#"),
-		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "boot_source_id"),
+		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "boot_source"),
 		resource.TestCheckResourceAttrSet("data.maas_boot_source_selection.test", "labels.#"),
 		resource.TestCheckResourceAttr("data.maas_boot_source_selection.test", "os", os),
 		// the returned release depends on tested MAAS version
@@ -41,6 +41,8 @@ data "maas_boot_source" "test" {
 }
 
 data "maas_boot_source_selection" "test" {
+	boot_source = data.maas_boot_source.test.id
+
 	os      = "%s"
 	release = "%s"
 }

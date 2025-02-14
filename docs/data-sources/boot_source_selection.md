@@ -17,16 +17,16 @@ Provides a resource to fetch a MAAS boot source selection.
 
 ### Required
 
+- `boot_source` (Number) The BootSource database ID this resource is associated with
 - `os` (String) The Operating system for this resource
+- `release` (String) The specific release of the Operating system for this resource
 
 ### Optional
 
 - `arches` (Set of String) The architecture list for this resource
 - `labels` (Set of String) The label lists for this resource
-- `release` (String) The specific release of the Operating system for this resource
 - `subarches` (Set of String) The list of subarches for this resource
 
 ### Read-Only
 
-- `boot_source_id` (Number) The BootSource this resource is associated with
 - `id` (String) The ID of this resource.

@@ -14,6 +14,8 @@ Provides a resource to manage a MAAS boot source selection.
 
 ```terraform
 resource "maas_boot_source_selection" "test" {
+  boot_source = maas_boot_source.example.id
+
   os      = "ubuntu"
   release = "jammy"
 }
@@ -24,6 +26,7 @@ resource "maas_boot_source_selection" "test" {
 
 ### Required
 
+- `boot_source` (Number) The BootSource database ID this resource is associated with
 - `os` (String) The Operating system for this resource
 - `release` (String) The specific release of the Operating system for this resource
 
@@ -35,5 +38,13 @@ resource "maas_boot_source_selection" "test" {
 
 ### Read-Only
 
-- `boot_source_id` (Number) The BootSource this resource is associated with
 - `id` (String) The ID of this resource.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# A bond network interface can be imported using the boot source ID and ID. e.g.
+$ terraform import maas_boot_source.example boot_source:id
+```
